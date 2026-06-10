@@ -1,32 +1,19 @@
-const SUPABASE_ORIGIN = 'https://eoysdsmsyeaflhxcczr.supabase.co';
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization,apikey,X-Client-Info,Prefer,Accept',
-};
 export default async function handler(request) {
   const url = new URL(request.url);
-  const targetUrl = SUPABASE_ORIGIN + url.pathname + url.search;
+  const target = 'https://eoysdsmsyeaflhxcczr.supabase.co' + url.pathname.replace('/api', '') + url.search;
   if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS });
+    return new Response(null, { status: 204, headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
+      'Access-Control-Allow-Headers': '*'
+    }});
   }
   try {
-    const resp = await fetch(targetUrl, {
-      method: request.method,
-      headers: request.headers,
-      body: request.body,
-    });
-    const headers = {};
-    resp.headers.forEach((v, k) => { headers[k] = v; });
-    Object.assign(headers, CORS);
-    return new Response(await resp.text(), {
-      status: resp.status,
-      headers,
-    });
+    const r = await fetch(target, { method: request.method, headers: request.headers, body: request.body });
+    const h = {}; r.headers.forEach((v,k) => h[k] = v);
+    h['Access-Control-Allow-Origin'] = '*';
+    return new Response(await r.text(), { status: r.status, headers: h });
   } catch(e) {
-    return new Response(JSON.stringify({error: e.message}), {
-      status: 502,
-      headers: {'content-type': 'application/json', ...CORS},
-    });
+    return new Response(JSON.stringify({error: String(e)}), { status: 502, headers: {'content-type':'application/json'} });
   }
 }
